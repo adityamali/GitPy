@@ -1,5 +1,7 @@
 import os
 import click
+import textwrap
+
 
 from . import data
 from . import base
@@ -40,4 +42,37 @@ def cat_file(object):
 # If the entry is a directory, recursively call write_tree on the directory
 @click.command()
 def write_tree():
-    base.write_tree()
+    click.echo(base.write_tree())
+
+
+"""Read a tree object from the objects directory."""
+# Parse the tree object and return a list of tuples containing the name, object ID, and type of each entry
+# If the type is 'blob', read the contents of the object from the objects directory and return it
+# If the type is 'tree', recursively call read_tree on the object ID
+@click.command()
+@click.argument('tree')
+def read_tree(tree):
+    base.read_tree(tree)
+
+
+"""Commit Messages"""
+@click.command()
+@click.option('-m', '--message', required=True)
+def commit(message):
+    if message is None:
+        click.echo("No message provided")
+        return
+    click.echo(base.commit(message))
+
+
+@click.command()
+def log():
+    oid = data.get_HEAD()
+    while oid:
+        commit = base.get_commit(oid)
+
+        click.echo(f'commit {oid}\n')
+        click.echo(textwrap.indent(commit.message, '    '))
+        click.echo('')
+
+        oid = commit.parent
