@@ -7,6 +7,9 @@ from . import data
 from . import base
 
 
+oid = base.get_oid
+
+
 """Initialize a new Git repository."""
 # Create a .gitpy directory at the root of the current working directory
 # Initialize the .gitpy/config file with the appropriate settings
@@ -31,7 +34,7 @@ def hash_object(file):
 # Read the contents of the object from the objects directory
 # Print the contents
 @click.command()
-@click.argument('object')
+@click.argument('object', type=oid)
 def cat_file(object):
     click.echo(data.get_object(object, expected=None))
 
@@ -50,12 +53,15 @@ def write_tree():
 # If the type is 'blob', read the contents of the object from the objects directory and return it
 # If the type is 'tree', recursively call read_tree on the object ID
 @click.command()
-@click.argument('tree')
+@click.argument('tree', type=oid)
 def read_tree(tree):
     base.read_tree(tree)
 
 
 """Commit Messages"""
+# Get the current HEAD commit
+# Get the parent commit of the HEAD commit
+# Write the commit message to the objects directory
 @click.command()
 @click.option('-m', '--message', required=True)
 def commit(message):
@@ -65,9 +71,16 @@ def commit(message):
     click.echo(base.commit(message))
 
 
+"""Log Messages"""
+# Get the current HEAD commit
+# Get the parent commit of the HEAD commit
+# Print the commit message
 @click.command()
-def log():
-    oid = data.get_HEAD()
+@click.argument('oid', required=False, type=oid)
+def log(oid):
+    if oid is None:
+        oid = data.get_ref('HEAD')
+
     while oid:
         commit = base.get_commit(oid)
 
@@ -76,3 +89,19 @@ def log():
         click.echo('')
 
         oid = commit.parent
+
+
+@click.command()
+@click.argument('oid', type=oid, required=False)
+def checkout(oid):
+    base.checkout(oid)
+
+
+@click.command()
+@click.argument('tag')
+@click.argument('oid' type=oid, required=False)
+def tag(tag, oid):
+    if oid is None:
+        oid = data.get_ref('HEAD')
+    
+    base.create_tag(tag, oid)

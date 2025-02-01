@@ -1,6 +1,7 @@
 import os
 import itertools
 import operator
+import string
 
 from collections import namedtuple
 
@@ -88,7 +89,8 @@ def read_tree (tree_oid):
 def commit(message):
     commit = f'tree {write_tree()}\n'
 
-    HEAD = data.get_HEAD()
+    # HEAD = data.get_HEAD()
+    HEAD = data.get_ref('HEAD')
     if HEAD:
         commit += f'parent {HEAD}\n'
 
@@ -96,7 +98,8 @@ def commit(message):
     commit += f'{message}\n'
 
     oid = data.hash_object(commit.encode(), 'commit')
-    data.set_HEAD(oid)
+    # data.set_HEAD(oid)
+    data.update_ref('HEAD', oid)
     return oid
 
 
@@ -117,3 +120,31 @@ def get_commit(oid):
     
     message = '\n'.join(lines)
     return Commit(tree=tree, parent=parent, message = message)
+
+
+def checkout(oid):
+    commit = get_commit(oid)
+    read_tree(commit.tree)
+    # data.set_HEAD(oid)
+    data.update_ref('HEAD', oid)
+
+def create_tag(tag, oid):
+    data.update_ref (f'refs/tags/{tag}', oid)
+
+def get_oid (tag):
+    refs_to_try = [
+         f'{tag}',
+         f'refs/{tag}',
+         f'refs/tags/{tag}',
+         f'refs/heads/{tag}',
+     ]
+    for ref in refs_to_try:
+         if data.get_ref (ref):
+             return data.get_ref (ref)
+ 
+     # Name is SHA1
+    is_hex = all (c in string.hexdigits for c in tag)
+    if len (tag) == 40 and is_hex:
+         return tag
+ 
+    assert False, f'Unknown name {tag}'

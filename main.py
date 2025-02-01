@@ -13,6 +13,8 @@ cli.add_command(write_tree)
 cli.add_command(read_tree)
 cli.add_command(commit)
 cli.add_command(log)
+cli.add_command(checkout)
+cli.add_command(tag)
 
 if __name__ == '__main__':
     cli()
